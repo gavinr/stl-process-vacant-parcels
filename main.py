@@ -74,28 +74,33 @@ with open(os.path.join(TEMP_FOLDER_NAME, VACANT_PROPERTY_CSV_FILENAME), 'rb') as
 
   records = sf.shapeRecords()
   # IMPORTANT - when doing full file use iterShapeRecords
-  for feature in records[:500]:
-      geom = feature.shape.__geo_interface__
-      atr = dict(zip(fields, feature.record))
-      # w.null()
-      w.shape(geom)
+  # for feature in sf.iterShapeRecords():
+  i = 0
+  log.info("records: {0}".format(len(records)))
+  for feature in records:
+    i = i + 1
+    geom = feature.shape.__geo_interface__
+    atr = dict(zip(fields, feature.record))
+    # w.null()
+    
 
-      print "working on --- {0}".format(atr['HANDLE'])
-      
-      item = False
-      for row in csvData:
-        # print "row.handle: {0}".format(row['HANDLE'])
-        # print "atr.handle: {0}".format(atr['HANDLE'])
-        if(int(row['HANDLE']) == int(atr['HANDLE'])):
-          # we found the item in the csv - bail
-          print "FOUND ROW:"
-          item = row
-          print item
-          
-          w.record(**item)
-          break
-      if item == False:
-        w.record(**blankRow)
+    # print "working on --- {0}".format(atr['HANDLE'])
+    
+    item = False
+    for row in csvData:
+      # print "row.handle: {0}".format(row['HANDLE'])
+      # print "atr.handle: {0}".format(atr['HANDLE'])
+      if(int(row['HANDLE']) == int(atr['HANDLE'])):
+        # we found the item in the csv - bail
+        print "FOUND ROW: {0}".format(str((float(i)/len(records)) * 100))
+
+        item = row
+        
+        w.shape(geom)
+        w.record(**item)
+        break
+    # if item == False:
+    #   w.record(**blankRow)
 
   w.close()
 
