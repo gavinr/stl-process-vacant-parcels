@@ -36,9 +36,6 @@ with zipfile.ZipFile(os.path.join(TEMP_FOLDER_NAME, STL_PARCEL_SHAPEFILE_FILENAM
     zip_ref.extractall(SHAPEFILE_PATH_ORIGINAL)
 
 
-
-
-
 sf = shapefile.Reader(os.path.join(SHAPEFILE_PATH_ORIGINAL, SHAPEFILE_NAME))
 
 if sf.shapeType != shapefile.POLYGON:
@@ -54,54 +51,43 @@ log.info(fields)
 with open(os.path.join(TEMP_FOLDER_NAME, VACANT_PROPERTY_CSV_FILENAME), 'rb') as csvfile:
   reader = csv.DictReader(csvfile, delimiter=',', quotechar='"')
   csvData = list(reader)
+  csvDict = {int(item['HANDLE']): item for item in csvData}
 
+  # BlankRow for items where there is no match in the CSV:
   blankRow = csvData[0].copy()
   for key in blankRow:
     blankRow[key] = None
 
   ## WRITE THE SHAPEFILE
   utils.mkdir_p(SHAPEFILE_PATH_MODIFIED)
-  # TODO - COPY PRJ FILE FROM EXISTING SHAPEFILE SINCE PYSHP DOES NOT HAVE THIS FUNCTIONALITY (https://github.com/GeospatialPython/pyshp/issues/158)
+  # COPY PRJ FILE FROM EXISTING SHAPEFILE SINCE PYSHP DOES NOT HAVE THIS FUNCTIONALITY (https://github.com/GeospatialPython/pyshp/issues/158)
   shutil.copyfile("{0}.prj".format(os.path.join(SHAPEFILE_PATH_ORIGINAL, SHAPEFILE_NAME)), "{0}.prj".format(os.path.join(SHAPEFILE_PATH_MODIFIED, SHAPEFILE_NAME)))
   w = shapefile.Writer(os.path.join(SHAPEFILE_PATH_MODIFIED, SHAPEFILE_NAME), shapeType=sf.shapeType)
   w.fields = sf.fields
+
+  # add all fields from CSV:
   for key in csvData[0].keys():
     w.field(key, 'C')
-  # TODO - add all fields from CSV
-  # TODO - join data
-  log.info('here:')
+
   log.info(len(w.fields))
 
+  # JOIN DATA FROM CSV ONTO SHAPEFILE:
   records = sf.shapeRecords()
   # IMPORTANT - when doing full file use iterShapeRecords
   # for feature in sf.iterShapeRecords():
-  i = 0
   log.info("records: {0}".format(len(records)))
-  for feature in records:
-    i = i + 1
+  for i, feature in enumerate(records):
     geom = feature.shape.__geo_interface__
     atr = dict(zip(fields, feature.record))
-    # w.null()
-    
 
-    # print "working on --- {0}".format(atr['HANDLE'])
     
-    item = False
-    for row in csvData:
-      # print "row.handle: {0}".format(row['HANDLE'])
-      # print "atr.handle: {0}".format(atr['HANDLE'])
-      if(int(row['HANDLE']) == int(atr['HANDLE'])):
-        # we found the item in the csv - bail
-        print "FOUND ROW: {0}".format(str((float(i)/len(records)) * 100))
-
-        item = row
-        
-        w.shape(geom)
-        w.record(**item)
-        break
-    # if item == False:
+    if(int(atr['HANDLE']) in csvDict):
+      item = csvDict[int(atr['HANDLE'])]
+      log.info("{0}% complete.".format(str(round((float(i)/len(records)) * 100, 2))))
+      w.shape(geom)
+      w.record(**item)
+    # else:
+    #   w.shape(geom)
     #   w.record(**blankRow)
 
   w.close()
-
-# shutil.rmtree(TEMP_FOLDER_NAME)
