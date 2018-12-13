@@ -49,17 +49,15 @@ log.info("Number of features in shapefile: {0}".format(len(sf)))
 fields = [field[0] for field in sf.fields[1:]]
 log.info(fields)
 
-# records = sf.shapeRecords()
-# for feature in records[:10]:
-#     geom = feature.shape.__geo_interface__
-#     atr = dict(zip(fields, feature.record))
-#     print geom, atr
-
 
 ## READ THE CSV
 with open(os.path.join(TEMP_FOLDER_NAME, VACANT_PROPERTY_CSV_FILENAME), 'rb') as csvfile:
   reader = csv.DictReader(csvfile, delimiter=',', quotechar='"')
   csvData = list(reader)
+
+  blankRow = csvData[0].copy()
+  for key in blankRow:
+    blankRow[key] = None
 
   ## WRITE THE SHAPEFILE
   utils.mkdir_p(SHAPEFILE_PATH_MODIFIED)
@@ -71,11 +69,12 @@ with open(os.path.join(TEMP_FOLDER_NAME, VACANT_PROPERTY_CSV_FILENAME), 'rb') as
     w.field(key, 'C')
   # TODO - add all fields from CSV
   # TODO - join data
-  log.info(w.fields)
+  log.info('here:')
+  log.info(len(w.fields))
 
   records = sf.shapeRecords()
   # IMPORTANT - when doing full file use iterShapeRecords
-  for feature in records[:40]:
+  for feature in records[:500]:
       geom = feature.shape.__geo_interface__
       atr = dict(zip(fields, feature.record))
       # w.null()
@@ -83,6 +82,7 @@ with open(os.path.join(TEMP_FOLDER_NAME, VACANT_PROPERTY_CSV_FILENAME), 'rb') as
 
       print "working on --- {0}".format(atr['HANDLE'])
       
+      item = False
       for row in csvData:
         # print "row.handle: {0}".format(row['HANDLE'])
         # print "atr.handle: {0}".format(atr['HANDLE'])
@@ -91,8 +91,11 @@ with open(os.path.join(TEMP_FOLDER_NAME, VACANT_PROPERTY_CSV_FILENAME), 'rb') as
           print "FOUND ROW:"
           item = row
           print item
+          
           w.record(**item)
           break
+      if item == False:
+        w.record(**blankRow)
 
   w.close()
 
