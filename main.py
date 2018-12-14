@@ -63,13 +63,22 @@ with open(os.path.join(TEMP_FOLDER_NAME, VACANT_PROPERTY_CSV_FILENAME), 'rb') as
   # COPY PRJ FILE FROM EXISTING SHAPEFILE SINCE PYSHP DOES NOT HAVE THIS FUNCTIONALITY (https://github.com/GeospatialPython/pyshp/issues/158)
   shutil.copyfile("{0}.prj".format(os.path.join(SHAPEFILE_PATH_ORIGINAL, SHAPEFILE_NAME)), "{0}.prj".format(os.path.join(SHAPEFILE_PATH_MODIFIED, SHAPEFILE_NAME)))
   w = shapefile.Writer(os.path.join(SHAPEFILE_PATH_MODIFIED, SHAPEFILE_NAME), shapeType=sf.shapeType)
-  w.fields = sf.fields
+  # w.fields = sf.fields
 
   # add all fields from CSV:
-  for key in csvData[0].keys():
-    w.field(key, 'C')
-
-  log.info(len(w.fields))
+  # for key in csvData[0].keys():
+  #   w.field(key, 'C')
+  
+  # Only Expose some of the fields from the CSV for now:
+  #  HANDLE, VB_Final, and VL_Final: (for field types see https://github.com/GeospatialPython/pyshp#reading-records)
+  w.field('HANDLE', 'N', 15)
+  w.field('SITEADDR', 'C', 50)
+  w.field('OwnerCat', 'C', 7)
+  w.field('Owner', 'C', 50)
+  w.field('NHD_NAME', 'C', 50)
+  w.field('VB_Final', 'N', 1)
+  w.field('VL_Final', 'N', 1)
+  w.field('Acres', 'N', 5, 5)
 
   # JOIN DATA FROM CSV ONTO SHAPEFILE:
   records = sf.shapeRecords()
@@ -85,7 +94,9 @@ with open(os.path.join(TEMP_FOLDER_NAME, VACANT_PROPERTY_CSV_FILENAME), 'rb') as
       item = csvDict[int(atr['HANDLE'])]
       log.info("{0}% complete.".format(str(round((float(i)/len(records)) * 100, 2))))
       w.shape(geom)
-      w.record(**item)
+      # w.record(**item) # This adds ALL the columns of the csv to the shapefile
+      w.record(HANDLE=item['HANDLE'],SITEADDR=item['SITEADDR'],OwnerCat=item['OwnerCat'],Owner=item['Owner'],NHD_NAME=item['NHD_NAME'],VB_Final=item['VB_Final'],VL_Final=item['VL_Final'],Acres=item['Acres'])
+
     # else:
     #   w.shape(geom)
     #   w.record(**blankRow)
