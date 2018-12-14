@@ -1,6 +1,6 @@
 # STL Vacant Parcels
 
-This script is used to merge the CSV of Vacant Parcels generated from the [STL Vacancy Project](https://www.stlvacancy.com/methods.html) and the official [City of St. Louis Parcels Shapefile](https://www.stlouis-mo.gov/data/parcels.cfm) to enable mapping and visualization fo the data.
+This script is used to merge the CSV of Vacant Parcels generated from the [STL Vacancy Project](https://www.stlvacancy.com/methods.html) and the official [City of St. Louis Parcels Shapefile](https://www.stlouis-mo.gov/data/parcels.cfm) to enable mapping and visualization of the data.
 
 ## The Map
 
